@@ -33,8 +33,14 @@ app.use('/api/events', eventRoutes);
 app.use('/api/customers', customerRoutes);
 app.use('/api/users', userRoutes); // Add this line
 
+// Default route
+app.get('/', (req, res) => {
+  res.send('API is running...');
+});
+
 const PORT = process.env.PORT || 5000;
 
-app.listen(PORT, () => {
+// Hapus kondisional ini dan biarkan server selalu berjalan
+app.listen(PORT, '0.0.0.0', () => {
   console.log(`Server running on port ${PORT}`);
 });
