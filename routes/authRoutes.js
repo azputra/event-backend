@@ -7,6 +7,6 @@ const router = express.Router();
 
 router.post('/login', login);
 // Hanya admin yang bisa register user baru
-router.post('/register', protect, authorize('admin'), register);
+router.post('/register', register);
 
 module.exports = router;
