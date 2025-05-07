@@ -3,6 +3,7 @@ const serverless = require('serverless-http');
 const dotenv = require('dotenv');
 const cors = require('cors');
 const connectDB = require('../config/db');
+const bodyParser = require('body-parser');
 
 // Load env vars
 dotenv.config();
@@ -10,14 +11,38 @@ dotenv.config();
 const app = express();
 
 // Middleware dasar
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(bodyParser.json({
+  verify: (req, res, buf) => {
+    req.rawBody = buf;
+  }
+}));
+app.use(bodyParser.urlencoded({ extended: true }));
+
 app.use(cors({
   origin: '*',
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
+
+// Tambahkan setelah middleware CORS dan sebelum middleware timeout
+app.use((req, res, next) => {
+  // Khusus untuk request dengan content-type application/json
+  if (req.headers['content-type']?.includes('application/json')) {
+    // Jika body masih berupa Buffer
+    if (Buffer.isBuffer(req.body)) {
+      try {
+        const bodyText = req.body.toString();
+        console.log('Raw Buffer JSON:', bodyText);
+        req.body = JSON.parse(bodyText);
+        console.log('Parsed JSON body:', req.body);
+      } catch (error) {
+        console.error('Failed to parse Buffer as JSON:', error);
+      }
+    }
+  }
+  next();
+});
 
 // Tambahkan middleware timeout
 app.use((req, res, next) => {
