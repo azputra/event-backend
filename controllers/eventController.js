@@ -28,16 +28,17 @@ exports.getEventById = async (req, res) => {
   }
 };
 
-// Create event (admin only)
+// controllers/eventController.js
 exports.createEvent = async (req, res) => {
   try {
-    const { nama, tanggal, lokasi, deskripsi } = req.body;
+    const { nama, tanggal, lokasi, deskripsi, backgroundColor } = req.body;
     
     const event = await Event.create({
       nama,
       tanggal,
       lokasi,
-      deskripsi
+      deskripsi,
+      backgroundColor: backgroundColor || '#ffffff'
     });
     
     res.status(201).json(event);
@@ -47,10 +48,10 @@ exports.createEvent = async (req, res) => {
   }
 };
 
-// Update event (admin only)
+// Also update the updateEvent function
 exports.updateEvent = async (req, res) => {
   try {
-    const { nama, tanggal, lokasi, deskripsi } = req.body;
+    const { nama, tanggal, lokasi, deskripsi, backgroundColor } = req.body;
     
     const event = await Event.findById(req.params.id);
     
@@ -62,6 +63,7 @@ exports.updateEvent = async (req, res) => {
     event.tanggal = tanggal || event.tanggal;
     event.lokasi = lokasi || event.lokasi;
     event.deskripsi = deskripsi || event.deskripsi;
+    event.backgroundColor = backgroundColor || event.backgroundColor;
     
     const updatedEvent = await event.save();
     
@@ -82,6 +84,22 @@ exports.deleteEvent = async (req, res) => {
     }
     
     res.json({ message: 'Event berhasil dihapus' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server Error' });
+  }
+};
+
+// Get event by slug
+exports.getEventBySlug = async (req, res) => {
+  try {
+    const event = await Event.findOne({ registrationSlug: req.params.slug });
+    
+    if (!event) {
+      return res.status(404).json({ message: 'Event tidak ditemukan' });
+    }
+    
+    res.json(event);
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: 'Server Error' });
