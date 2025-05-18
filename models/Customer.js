@@ -2,6 +2,7 @@
 const mongoose = require('mongoose');
 
 const CustomerSchema = new mongoose.Schema({
+  // Fixed required fields
   email: {
     type: String,
     required: true
@@ -18,17 +19,27 @@ const CustomerSchema = new mongoose.Schema({
     type: String,
     required: true
   },
-  isVerified: {
-    type: Boolean,
-    default: false
-  },
-  barcode: {
-    type: String
-  },
   event: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Event',
     required: true
+  },
+  // Verification fields
+  isVerified: {
+    type: Boolean,
+    default: false
+  },
+  verifiedAt: {
+    type: Date,
+    default: null
+  },
+  barcode: {
+    type: String
+  },
+  registrationData: {
+    type: Map,
+    of: mongoose.Schema.Types.Mixed,
+    default: {}
   },
   createdAt: {
     type: Date,

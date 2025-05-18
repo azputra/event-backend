@@ -1,6 +1,5 @@
 // models/Event.js
 const mongoose = require('mongoose');
-const shortid = require('shortid');
 
 const EventSchema = new mongoose.Schema({
   nama: {
@@ -15,16 +14,38 @@ const EventSchema = new mongoose.Schema({
     type: String,
     required: true
   },
-  deskripsi: String,
+  deskripsi: {
+    type: String
+  },
   backgroundColor: {
     type: String,
-    default: '#ffffff' // Default white color
+    default: '#ffffff'
+  },
+  backgroundImage: {
+    type: String 
+  },
+  backgroundImageType: {
+    type: String
   },
   registrationSlug: {
     type: String,
-    default: shortid.generate,
     unique: true
   },
+  customFields: [{
+    fieldId: String,
+    label: String,
+    type: {
+      type: String,
+      enum: ['text', 'select', 'textarea', 'checkbox', 'radio'],
+      default: 'text'
+    },
+    required: {
+      type: Boolean,
+      default: false
+    },
+    options: [String],
+    placeholder: String
+  }],
   createdAt: {
     type: Date,
     default: Date.now

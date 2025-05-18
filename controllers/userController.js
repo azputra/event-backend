@@ -67,20 +67,18 @@ exports.updateUser = async (req, res) => {
 // Delete user
 exports.deleteUser = async (req, res) => {
   try {
-    const user = await User.findById(req.params.id);
+    const customer = await User.findById(req.params.id);
     
-    if (!user) {
+    if (!customer) {
       return res.status(404).json({ message: 'User tidak ditemukan' });
     }
     
-    await User.findByIdAndRemove(req.params.id);
+    customer.deletedAt = Date.now();
+    await customer.save();
     
     res.json({ message: 'User berhasil dihapus' });
   } catch (err) {
     console.error(err);
-    if (err.kind === 'ObjectId') {
-      return res.status(404).json({ message: 'User tidak ditemukan' });
-    }
     res.status(500).json({ message: 'Server Error' });
   }
 };
