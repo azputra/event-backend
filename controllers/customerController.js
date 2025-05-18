@@ -181,13 +181,13 @@ exports.createCustomer = async (req, res) => {
       // Berhasil mengirim pesan text
       res.status(201).json({
         customer,
-        message: 'Customer created and WhatsApp message sent successfully'
+        message: 'Peserta created and WhatsApp message sent successfully'
       });
     } catch (whatsappErr) {
       console.error('Error sending WhatsApp:', whatsappErr);
       res.status(201).json({
         customer,
-        warning: 'Customer created but WhatsApp delivery failed: ' + whatsappErr.message
+        warning: 'Peserta created but WhatsApp delivery failed: ' + whatsappErr.message
       });
     }
   } catch (err) {
@@ -204,7 +204,7 @@ exports.updateCustomer = async (req, res) => {
     const customer = await Customer.findById(req.params.id);
     
     if (!customer) {
-      return res.status(404).json({ message: 'Customer tidak ditemukan' });
+      return res.status(404).json({ message: 'Peserta tidak ditemukan' });
     }
     
     // Update fixed fields
@@ -262,13 +262,13 @@ exports.deleteCustomer = async (req, res) => {
     const customer = await Customer.findById(req.params.id);
     
     if (!customer) {
-      return res.status(404).json({ message: 'Customer tidak ditemukan' });
+      return res.status(404).json({ message: 'Peserta tidak ditemukan' });
     }
     
     customer.deletedAt = Date.now();
     await customer.save();
     
-    res.json({ message: 'Customer berhasil dihapus' });
+    res.json({ message: 'Peserta berhasil dihapus' });
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: 'Server Error' });
@@ -293,14 +293,14 @@ exports.verifyCustomer = async (req, res) => {
     if (customer.deletedAt) {
       return res.status(400).json({ 
         success: false, 
-        message: 'Customer sudah dihapus' 
+        message: 'Peserta sudah dihapus' 
       });
     }
     
     if (customer.isVerified) {
       return res.status(400).json({ 
         success: false, 
-        message: 'Customer sudah diverifikasi sebelumnya' 
+        message: 'Peserta sudah diverifikasi sebelumnya' 
       });
     }
     
@@ -351,7 +351,7 @@ exports.verifyCustomer = async (req, res) => {
     
     res.json({ 
       success: true, 
-      message: 'Customer berhasil diverifikasi',
+      message: 'Peserta berhasil diverifikasi',
       customer: customerDetails
     });
   } catch (err) {
