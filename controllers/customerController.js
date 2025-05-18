@@ -152,32 +152,13 @@ exports.createCustomer = async (req, res) => {
       `Jika Anda memiliki pertanyaan atau membutuhkan bantuan, jangan ragu untuk menghubungi petugas kami`;
 
     try {
-      // Kirim pesan WhatsApp
-      const message = await client.messages.create({
+      // Kirim QR code yang disimpan di Cloudinary
+      const mediaMessage = await client.messages.create({
         from: `whatsapp:${process.env.TWILIO_WHATSAPP_NUMBER}`,
         to: `whatsapp:${recipientNumber}`,
-        body: whatsappMessage
+        body: whatsappMessage, 
+        mediaUrl: cloudinaryResult.secure_url
       });
-      
-      console.log('WhatsApp text message sent with SID:', message.sid);
-      
-      // Tunggu sebentar sebelum mengirim QR code
-      setTimeout(async () => {
-        try {
-          // Kirim QR code yang disimpan di Cloudinary
-          const mediaMessage = await client.messages.create({
-            from: `whatsapp:${process.env.TWILIO_WHATSAPP_NUMBER}`,
-            to: `whatsapp:${recipientNumber}`,
-            body: 'QR Code Tiket Anda:', 
-            mediaUrl: cloudinaryResult.secure_url
-          });
-          
-          console.log('QR Code sent with SID:', mediaMessage.sid);
-        } catch (mediaErr) {
-          console.error('Error sending QR code:', mediaErr);
-        }
-      }, 1000);
-      
       // Berhasil mengirim pesan text
       res.status(201).json({
         customer,
