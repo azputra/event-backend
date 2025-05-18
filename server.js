@@ -4,6 +4,7 @@ const dotenv = require('dotenv');
 const cors = require('cors');
 const connectDB = require('./config/db');
 const bodyParser = require('body-parser');
+const path = require('path');
 
 // Load env vars
 dotenv.config();
@@ -19,6 +20,7 @@ const userRoutes = require('./routes/userRoutes'); // Add this line
 
 const app = express();
 app.use(express.static('public'));
+app.use(express.static(path.join(__dirname, 'public')));
 app.use(bodyParser.json({ limit: '50mb' }));
 app.use(bodyParser.urlencoded({ limit: '50mb', extended: true }));
 app.use(express.json({ limit: '50mb' }));

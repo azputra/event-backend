@@ -5,6 +5,7 @@ const twilio = require('twilio');
 const QRCode = require('qrcode');
 const fs = require('fs');
 const path = require('path');
+const cloudinary = require('cloudinary').v2;
 require('dotenv').config();
 
 // Setup Twilio client
@@ -12,6 +13,12 @@ const client = twilio(
   process.env.TWILIO_ACCOUNT_SID,
   process.env.TWILIO_AUTH_TOKEN
 );
+
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET
+});
 
 // Create customer (admin only)
 exports.createCustomer = async (req, res) => {
@@ -67,7 +74,7 @@ exports.createCustomer = async (req, res) => {
     });
     
     // Create temporary file path for QR code
-    const tempDir = path.join(__dirname, '../public/temp');
+    const tempDir = path.join(__dirname, '../temp');
     
     // Make sure directory exists
     if (!fs.existsSync(tempDir)) {
@@ -80,10 +87,19 @@ exports.createCustomer = async (req, res) => {
     // Generate QR code and save to file
     await QRCode.toFile(qrFilePath, barcodeData);
     
-    // Store the relative path in the customer record
-    const barcodeUrl = `/temp/${qrFilename}`;
-    customer.barcode = barcodeUrl;
+    // Upload to Cloudinary
+    const cloudinaryResult = await cloudinary.uploader.upload(qrFilePath, {
+      folder: 'event-qrcodes',
+      public_id: `qr-${customer._id}`,
+      overwrite: true
+    });
+    
+    // Store the cloudinary URL in the customer record
+    customer.barcode = cloudinaryResult.secure_url;
     await customer.save();
+    
+    // Clean up local file
+    fs.unlinkSync(qrFilePath);
     
     // Format nomor WhatsApp penerima (format E.164)
     let recipientNumber = customer.noHp;
@@ -136,7 +152,7 @@ exports.createCustomer = async (req, res) => {
       `Jika Anda memiliki pertanyaan atau membutuhkan bantuan, jangan ragu untuk menghubungi petugas kami`;
 
     try {
-      // Kirim pesan text WhatsApp
+      // Kirim pesan WhatsApp
       const message = await client.messages.create({
         from: `whatsapp:${process.env.TWILIO_WHATSAPP_NUMBER}`,
         to: `whatsapp:${recipientNumber}`,
@@ -148,30 +164,21 @@ exports.createCustomer = async (req, res) => {
       // Tunggu sebentar sebelum mengirim QR code
       setTimeout(async () => {
         try {
-          // Dapatkan URL publik dari QR code
-          // Pastikan BASE_URL diisi dengan domain publik aplikasi Anda di file .env
-          // misalnya: BASE_URL=https://your-app-name.herokuapp.com
-          const baseUrl = process.env.BASE_URL || '';
-          
-          // Buat URL publik lengkap untuk QR code
-          const publicQrUrl = `${baseUrl}${barcodeUrl}`;
-
-          // Kirim QR code sebagai pesan media terpisah
+          // Kirim QR code yang disimpan di Cloudinary
           const mediaMessage = await client.messages.create({
             from: `whatsapp:${process.env.TWILIO_WHATSAPP_NUMBER}`,
             to: `whatsapp:${recipientNumber}`,
-            // WhatsApp sering kali membutuhkan body kosong untuk pesan media
             body: 'QR Code Tiket Anda:', 
-            mediaUrl: publicQrUrl
+            mediaUrl: cloudinaryResult.secure_url
           });
           
           console.log('QR Code sent with SID:', mediaMessage.sid);
         } catch (mediaErr) {
           console.error('Error sending QR code:', mediaErr);
         }
-      }, 1000); // Tunggu 1 detik sebelum mengirim QR code
+      }, 1000);
       
-      // Berhasil mengirim pesan text, kembalikan response
+      // Berhasil mengirim pesan text
       res.status(201).json({
         customer,
         message: 'Customer created and WhatsApp message sent successfully'
