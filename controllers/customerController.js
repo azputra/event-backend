@@ -2,6 +2,7 @@
 const Customer = require('../models/Customer');
 const Event = require('../models/Event');
 const twilio = require('twilio');
+const nodemailer = require('nodemailer');
 const QRCode = require('qrcode');
 const fs = require('fs');
 const path = require('path');
@@ -13,6 +14,15 @@ const client = twilio(
   process.env.TWILIO_ACCOUNT_SID,
   process.env.TWILIO_AUTH_TOKEN
 );
+
+// Setup email transporter
+const transporter = nodemailer.createTransport({
+  service: 'gmail',
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS
+  }
+});
 
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
@@ -98,9 +108,6 @@ exports.createCustomer = async (req, res) => {
     customer.barcode = cloudinaryResult.secure_url;
     await customer.save();
     
-    // Clean up local file
-    fs.unlinkSync(qrFilePath);
-    
     // Format nomor WhatsApp penerima (format E.164)
     let recipientNumber = customer.noHp;
     
@@ -114,7 +121,7 @@ exports.createCustomer = async (req, res) => {
     // Hapus spasi, tanda hubung, dan karakter lain yang tidak diizinkan
     recipientNumber = recipientNumber.replace(/\s+|-|\(|\)/g, '');
     
-    // Generate registration details untuk pesan WhatsApp
+    // Generate registration details untuk pesan
     let registrationDetails = '';
     if (customer.registrationData.size > 0) {
       registrationDetails = '\n\n*Detail Pendaftaran:*\n';
@@ -151,25 +158,246 @@ exports.createCustomer = async (req, res) => {
       `3. Pastikan perangkat Anda sudah terisi daya.\n\n` +
       `Jika Anda memiliki pertanyaan atau membutuhkan bantuan, jangan ragu untuk menghubungi petugas kami`;
 
+    // Generate registration details for the email
+    let emailRegistrationDetails = '';
+    if (customer.registrationData.size > 0) {
+      emailRegistrationDetails = '<div class="registration-details">';
+      emailRegistrationDetails += '<h3>Detail Pendaftaran:</h3>';
+      emailRegistrationDetails += '<ul>';
+      
+      // Create a map of field IDs to labels from event's customFields
+      const fieldLabels = {};
+      eventData.customFields.forEach(field => {
+        fieldLabels[field.fieldId] = field.label;
+      });
+      
+      for (const [key, value] of customer.registrationData) {
+        const label = fieldLabels[key] || key;
+        
+        // Handle different types of values (checkbox arrays, etc)
+        let displayValue = value;
+        if (Array.isArray(value)) {
+          displayValue = value.join(', ');
+        }
+        
+        emailRegistrationDetails += `<li><strong>${label}:</strong> ${displayValue}</li>`;
+      }
+      
+      emailRegistrationDetails += '</ul></div>';
+    }
+    
+    // Email template with dynamic content
+    const mailOptions = {
+      from: process.env.EMAIL_USER,
+      to: customer.email,
+      subject: 'Tiket Event Anda',
+      html: `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>Tiket Event</title>
+          <style>
+            body {
+              font-family: 'Helvetica Neue', Arial, sans-serif;
+              line-height: 1.6;
+              color: #333;
+              background-color: #f9f9f9;
+              margin: 0;
+              padding: 0;
+            }
+            .container {
+              max-width: 600px;
+              margin: 0 auto;
+              background: #ffffff;
+              border-radius: 8px;
+              overflow: hidden;
+              box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            }
+            .header {
+              background: linear-gradient(135deg, #6b46c1 0%, #9f7aea 100%);
+              color: white;
+              padding: 30px;
+              text-align: center;
+            }
+            .header h1 {
+              margin: 0;
+              font-size: 28px;
+              font-weight: 700;
+              letter-spacing: 1px;
+            }
+            .content {
+              padding: 30px;
+            }
+            .ticket-info {
+              background-color: #f3f4f6;
+              border-radius: 8px;
+              padding: 25px;
+              margin: 20px 0;
+              text-align: center;
+            }
+            .qr-code {
+              margin: 20px auto;
+              text-align: center;
+            }
+            .qr-code img {
+              max-width: 220px;
+              height: auto;
+              border: 8px solid white;
+              box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            }
+            .ticket-id {
+              font-family: monospace;
+              font-size: 16px;
+              background: #edf2f7;
+              padding: 10px;
+              border-radius: 4px;
+              margin: 15px 0;
+              display: inline-block;
+              word-break: break-all;
+            }
+            .registration-details {
+              margin: 25px 0;
+              text-align: left;
+              background-color: #f9f9f9;
+              padding: 15px;
+              border-radius: 8px;
+            }
+            .registration-details ul {
+              padding-left: 20px;
+            }
+            .registration-details li {
+              margin-bottom: 8px;
+            }
+            .footer {
+              background-color: #f3f4f6;
+              padding: 20px;
+              text-align: center;
+              font-size: 14px;
+              color: #666;
+            }
+            .instructions {
+              margin: 25px 0;
+              line-height: 1.7;
+            }
+            .highlight {
+              color: #6b46c1;
+              font-weight: 600;
+            }
+            .button {
+              display: inline-block;
+              background-color: #6b46c1;
+              color: white;
+              padding: 12px 24px;
+              border-radius: 4px;
+              text-decoration: none;
+              font-weight: 500;
+              margin: 15px 0;
+              transition: background-color 0.2s;
+            }
+            .button:hover {
+              background-color: #553c9a;
+            }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header">
+              <h1>TIKET EVENT</h1>
+            </div>
+            
+            <div class="content">
+              <p>Halo <span class="highlight">${customer.nama}</span>,</p>
+              
+              <p>Terima kasih telah mendaftar. Berikut adalah tiket digital Anda:</p>
+              
+              <div class="ticket-info">
+                <div class="qr-code">
+                  <img src="cid:unique-barcode-id" alt="Barcode" />
+                </div>
+                
+                <div class="ticket-id">
+                  ID Tiket: ${customer._id}
+                </div>
+              </div>
+              
+              ${emailRegistrationDetails}
+              
+              <div class="instructions">
+                <p><strong>Petunjuk:</strong></p>
+                <ol>
+                  <li>Simpan email ini untuk referensi Anda.</li>
+                  <li>Tunjukkan QR code kepada petugas saat acara berlangsung.</li>
+                  <li>Pastikan perangkat Anda sudah terisi daya.</li>
+                </ol>
+              </div>
+              
+              <p>Jika Anda memiliki pertanyaan atau membutuhkan bantuan, jangan ragu untuk menghubungi kami.</p>
+              
+              <div style="text-align: center;">
+                <a style="color: white;" href="https://wa.me/081322113345?text=Hubungi%20Kami" class="button">Hubungi Kami</a>
+              </div>
+            </div>
+            
+            <div class="footer">
+              <p>Jika QR code tidak muncul, silakan hubungi kami di <a href="mailto:${process.env.EMAIL_USER}">${process.env.EMAIL_USER}</a></p>
+              <p>&copy; ${new Date().getFullYear()} Event Organizer. All rights reserved.</p>
+            </div>
+          </div>
+        </body>
+        </html>
+      `,
+      attachments: [
+        {
+          filename: 'barcode.png',
+          path: qrFilePath,
+          cid: 'unique-barcode-id'
+        }
+      ]
+    };
+
     try {
-      // Kirim QR code yang disimpan di Cloudinary
+      // Coba kirim WhatsApp terlebih dahulu
       const mediaMessage = await client.messages.create({
         from: `whatsapp:${process.env.TWILIO_WHATSAPP_NUMBER}`,
         to: `whatsapp:${recipientNumber}`,
         body: whatsappMessage, 
         mediaUrl: cloudinaryResult.secure_url
       });
-      // Berhasil mengirim pesan text
+      
+      // Berhasil mengirim pesan WhatsApp
       res.status(201).json({
         customer,
         message: 'Peserta created and WhatsApp message sent successfully'
       });
     } catch (whatsappErr) {
       console.error('Error sending WhatsApp:', whatsappErr);
-      res.status(201).json({
-        customer,
-        warning: 'Peserta created but WhatsApp delivery failed: ' + whatsappErr.message
-      });
+      
+      try {
+        // Fallback ke email jika WhatsApp gagal
+        await transporter.sendMail(mailOptions);
+        
+        res.status(201).json({
+          customer,
+          message: 'Peserta created. WhatsApp failed, but email sent successfully',
+          whatsappError: whatsappErr.message
+        });
+      } catch (emailErr) {
+        console.error('Error sending email:', emailErr);
+        
+        res.status(201).json({
+          customer,
+          warning: 'Peserta created but both WhatsApp and email delivery failed',
+          whatsappError: whatsappErr.message,
+          emailError: emailErr.message
+        });
+      }
+    } finally {
+      // Clean up local file
+      if (fs.existsSync(qrFilePath)) {
+        fs.unlinkSync(qrFilePath);
+      }
     }
   } catch (err) {
     console.error(err);
