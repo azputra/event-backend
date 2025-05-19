@@ -35,6 +35,19 @@ exports.createCustomer = async (req, res) => {
       return res.status(404).json({ message: 'Event tidak ditemukan' });
     }
 
+    // Cek jumlah pendaftar untuk event ini
+    const registeredCount = await Customer.countDocuments({
+      event: event,
+      deletedAt: null // Hanya hitung peserta yang tidak dihapus
+    });
+
+    // Jika sudah mencapai batas 1700 peserta, tolak pendaftaran
+    if (registeredCount >= 1700) {
+      return res.status(400).json({
+        message: 'Batas maksimum pendaftar sudah tercapai. Pendaftaran telah ditutup.'
+      });
+    }
+
     // Create customer with fixed fields
     const customer = new Customer({
       email,

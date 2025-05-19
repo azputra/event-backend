@@ -8,7 +8,8 @@ const {
   deleteEvent,
   getEventBySlug,
   getEventImage,
-  updateCustomFields
+  updateCustomFields,
+  getEventParticipantCount
 } = require('../controllers/eventController');
 const { protect, authorize } = require('../middleware/auth');
 
@@ -22,5 +23,6 @@ router.delete('/:id', protect, authorize('admin'), deleteEvent);
 router.get('/slug/:slug', getEventBySlug);
 router.get('/image/:id', getEventImage);
 router.put('/:id/custom-fields', protect, updateCustomFields);
+router.get('/:id/count', getEventParticipantCount);
 
 module.exports = router;

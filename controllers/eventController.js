@@ -1,5 +1,6 @@
 // controllers/eventController.js
 const Event = require('../models/Event');
+const Customer = require('../models/Customer');
 
 // Get all events
 exports.getEvents = async (req, res) => {
@@ -311,6 +312,24 @@ exports.updateCustomFields = async (req, res) => {
     await event.save();
     
     res.json(event);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server Error' });
+  }
+};
+
+
+
+exports.getEventParticipantCount = async (req, res) => {
+  try {
+    const eventId = req.params.id;
+    
+    const count = await Customer.countDocuments({
+      event: eventId,
+      deletedAt: null
+    });
+    
+    res.json({ count });
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: 'Server Error' });
