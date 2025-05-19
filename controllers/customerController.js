@@ -299,6 +299,23 @@ exports.createCustomer = async (req, res) => {
             .button:hover {
               background-color: #553c9a;
             }
+            .terms-conditions {
+              margin: 25px 0;
+              background-color: #f3f4f6;
+              padding: 20px;
+              border-radius: 8px;
+              text-align: left;
+            }
+            .terms-conditions h3 {
+              color: #6b46c1;
+              margin-top: 0;
+            }
+            .terms-conditions ol {
+              padding-left: 20px;
+            }
+            .terms-conditions li {
+              margin-bottom: 10px;
+            }
           </style>
         </head>
         <body>
@@ -323,6 +340,21 @@ exports.createCustomer = async (req, res) => {
               </div>
               
               ${emailRegistrationDetails}
+              
+              <div class="terms-conditions">
+                <h3>Terms & Conditions – Me-O Cat Fun Day</h3>
+                <ol>
+                  <li>Peserta wajib mendaftar melalui Link pendaftaran & melakukan registrasi ulang saat event mulai pukul 05.30 - 06.15 WIB</li>
+                  <li>Peserta diperbolehkan membawa Kucing maksimal 1 ekor kucing.</li>
+                  <li>Pastikan anabul dalam kondisi sehat sebelum di bawa ya sohib.</li>
+                  <li>Sohib yang membawa kucing wajib menggunakan pet cargo.</li>
+                  <li>Sohib yang ikut funwalk bisa menitipkan anabul di area penitipan anabul di area venue.</li>
+                  <li>Ukuran tshirt akan disesuaikan dengan stock ya sohib</li>
+                  <li>Jangan lupa bawa kebutuhan-kebutuhan kucing kamu yaa</li>
+                  <li>Kucing adalah tanggung jawab penuh pemilik selama acara berlangsung.</li>
+                  <li>Dilarang membawa hewan selain kucing.</li>
+                </ol>
+              </div>
               
               <div class="instructions">
                 <p><strong>Petunjuk:</strong></p>
