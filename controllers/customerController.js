@@ -108,7 +108,7 @@ exports.createCustomer = async (req, res) => {
     customer.barcode = cloudinaryResult.secure_url;
     await customer.save();
     
-    // Format nomor WhatsApp penerima (format E.164)
+    // Format nomor WhatsApp penerima (format E.164) - Keeping this for future use
     let recipientNumber = customer.noHp;
     
     // Pastikan format nomor diawali dengan kode negara (+62) dan tidak ada spasi atau karakter lain
@@ -121,31 +121,31 @@ exports.createCustomer = async (req, res) => {
     // Hapus spasi, tanda hubung, dan karakter lain yang tidak diizinkan
     recipientNumber = recipientNumber.replace(/\s+|-|\(|\)/g, '');
     
-    // Generate registration details untuk pesan
-    let registrationDetails = '';
-    if (customer.registrationData.size > 0) {
-      registrationDetails = '\n\n*Detail Pendaftaran:*\n';
-      
-      // Create a map of field IDs to labels from event's customFields
-      const fieldLabels = {};
-      eventData.customFields.forEach(field => {
-        fieldLabels[field.fieldId] = field.label;
-      });
-      
-      for (const [key, value] of customer.registrationData) {
-        const label = fieldLabels[key] || key;
-        
-        // Handle different types of values (checkbox arrays, etc)
-        let displayValue = value;
-        if (Array.isArray(value)) {
-          displayValue = value.join(', ');
-        }
-        
-        registrationDetails += `• *${label}:* ${displayValue}\n`;
-      }
-    }
+    // Generate registration details untuk pesan - Commented out WhatsApp message
+    // let registrationDetails = '';
+    // if (customer.registrationData.size > 0) {
+    //   registrationDetails = '\n\n*Detail Pendaftaran:*\n';
+    //   
+    //   // Create a map of field IDs to labels from event's customFields
+    //   const fieldLabels = {};
+    //   eventData.customFields.forEach(field => {
+    //     fieldLabels[field.fieldId] = field.label;
+    //   });
+    //   
+    //   for (const [key, value] of customer.registrationData) {
+    //     const label = fieldLabels[key] || key;
+    //     
+    //     // Handle different types of values (checkbox arrays, etc)
+    //     let displayValue = value;
+    //     if (Array.isArray(value)) {
+    //       displayValue = value.join(', ');
+    //     }
+    //     
+    //     registrationDetails += `• *${label}:* ${displayValue}\n`;
+    //   }
+    // }
     
-    // Buat pesan WhatsApp
+    // Buat pesan WhatsApp - Commented out
     // const whatsappMessage = 
     //   `*TIKET EVENT*\n\n` +
     //   `Halo *${customer.nama}*,\n\n` +
@@ -357,6 +357,7 @@ exports.createCustomer = async (req, res) => {
       ]
     };
 
+    // Commented out WhatsApp sending code
     // try {
     //   // Coba kirim WhatsApp terlebih dahulu
     //   const mediaMessage = await client.messages.create({
@@ -365,39 +366,37 @@ exports.createCustomer = async (req, res) => {
     //     body: whatsappMessage, 
     //     mediaUrl: cloudinaryResult.secure_url
     //   });
-      
+    //   
     //   // Berhasil mengirim pesan WhatsApp
     //   res.status(201).json({
     //     customer,
     //     message: 'Peserta created and WhatsApp message sent successfully'
     //   });
     // } catch (whatsappErr) {
-      // console.error('Error sending WhatsApp:', whatsappErr);
+    //   console.error('Error sending WhatsApp:', whatsappErr);
       
-      try {
-        // Fallback ke email jika WhatsApp gagal
-        await transporter.sendMail(mailOptions);
-        
-        res.status(201).json({
-          customer,
-          message: 'Peserta created. WhatsApp failed, but email sent successfully',
-          whatsappError: whatsappErr.message
-        });
-      } catch (emailErr) {
-        console.error('Error sending email:', emailErr);
-        
-        res.status(201).json({
-          customer,
-          warning: 'Peserta created but both WhatsApp and email delivery failed',
-          whatsappError: whatsappErr.message,
-          emailError: emailErr.message
-        });
+    try {
+      // Send email
+      await transporter.sendMail(mailOptions);
+      
+      res.status(201).json({
+        customer,
+        message: 'Peserta created and email sent successfully'
+      });
+    } catch (emailErr) {
+      console.error('Error sending email:', emailErr);
+      
+      res.status(201).json({
+        customer,
+        warning: 'Peserta created but email delivery failed',
+        emailError: emailErr.message
+      });
+    } finally {
+      // Clean up local file
+      if (fs.existsSync(qrFilePath)) {
+        fs.unlinkSync(qrFilePath);
       }
-    // } finally {
-    //   // Clean up local file
-    //   if (fs.existsSync(qrFilePath)) {
-    //     fs.unlinkSync(qrFilePath);
-    //   }
+    }
     // }
   } catch (err) {
     console.error(err);
