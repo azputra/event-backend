@@ -146,17 +146,17 @@ exports.createCustomer = async (req, res) => {
     }
     
     // Buat pesan WhatsApp
-    const whatsappMessage = 
-      `*TIKET EVENT*\n\n` +
-      `Halo *${customer.nama}*,\n\n` +
-      `Terima kasih telah mendaftar. Berikut adalah tiket digital Anda:\n\n` +
-      `*ID Tiket:* ${customer._id}\n` +
-      `${registrationDetails}\n` +
-      `*Petunjuk:*\n` +
-      `1. Simpan pesan ini untuk referensi Anda.\n` +
-      `2. Tunjukkan QR code kepada petugas saat acara berlangsung.\n` +
-      `3. Pastikan perangkat Anda sudah terisi daya.\n\n` +
-      `Jika Anda memiliki pertanyaan atau membutuhkan bantuan, jangan ragu untuk menghubungi petugas kami`;
+    // const whatsappMessage = 
+    //   `*TIKET EVENT*\n\n` +
+    //   `Halo *${customer.nama}*,\n\n` +
+    //   `Terima kasih telah mendaftar. Berikut adalah tiket digital Anda:\n\n` +
+    //   `*ID Tiket:* ${customer._id}\n` +
+    //   `${registrationDetails}\n` +
+    //   `*Petunjuk:*\n` +
+    //   `1. Simpan pesan ini untuk referensi Anda.\n` +
+    //   `2. Tunjukkan QR code kepada petugas saat acara berlangsung.\n` +
+    //   `3. Pastikan perangkat Anda sudah terisi daya.\n\n` +
+    //   `Jika Anda memiliki pertanyaan atau membutuhkan bantuan, jangan ragu untuk menghubungi petugas kami`;
 
     // Generate registration details for the email
     let emailRegistrationDetails = '';
@@ -357,22 +357,22 @@ exports.createCustomer = async (req, res) => {
       ]
     };
 
-    try {
-      // Coba kirim WhatsApp terlebih dahulu
-      const mediaMessage = await client.messages.create({
-        from: `whatsapp:${process.env.TWILIO_WHATSAPP_NUMBER}`,
-        to: `whatsapp:${recipientNumber}`,
-        body: whatsappMessage, 
-        mediaUrl: cloudinaryResult.secure_url
-      });
+    // try {
+    //   // Coba kirim WhatsApp terlebih dahulu
+    //   const mediaMessage = await client.messages.create({
+    //     from: `whatsapp:${process.env.TWILIO_WHATSAPP_NUMBER}`,
+    //     to: `whatsapp:${recipientNumber}`,
+    //     body: whatsappMessage, 
+    //     mediaUrl: cloudinaryResult.secure_url
+    //   });
       
-      // Berhasil mengirim pesan WhatsApp
-      res.status(201).json({
-        customer,
-        message: 'Peserta created and WhatsApp message sent successfully'
-      });
-    } catch (whatsappErr) {
-      console.error('Error sending WhatsApp:', whatsappErr);
+    //   // Berhasil mengirim pesan WhatsApp
+    //   res.status(201).json({
+    //     customer,
+    //     message: 'Peserta created and WhatsApp message sent successfully'
+    //   });
+    // } catch (whatsappErr) {
+      // console.error('Error sending WhatsApp:', whatsappErr);
       
       try {
         // Fallback ke email jika WhatsApp gagal
@@ -393,12 +393,12 @@ exports.createCustomer = async (req, res) => {
           emailError: emailErr.message
         });
       }
-    } finally {
-      // Clean up local file
-      if (fs.existsSync(qrFilePath)) {
-        fs.unlinkSync(qrFilePath);
-      }
-    }
+    // } finally {
+    //   // Clean up local file
+    //   if (fs.existsSync(qrFilePath)) {
+    //     fs.unlinkSync(qrFilePath);
+    //   }
+    // }
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: 'Server Error' });
