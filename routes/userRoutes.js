@@ -6,13 +6,12 @@ const {
   updateUser, 
   deleteUser 
 } = require('../controllers/userController');
-const { protect, authorize } = require('../middleware/auth');
+const { protect } = require('../middleware/auth');
 
 const router = express.Router();
 
 // All these routes require authentication and admin privileges
 router.use(protect);
-router.use(authorize('admin'));
 
 router
   .route('/')

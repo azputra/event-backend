@@ -11,15 +11,15 @@ const {
   updateCustomFields,
   getEventParticipantCount
 } = require('../controllers/eventController');
-const { protect, authorize } = require('../middleware/auth');
+const { protect } = require('../middleware/auth');
 
 const router = express.Router();
 
 router.get('/', protect, getEvents);
 router.get('/:id', protect, getEventById);
-router.post('/', protect, authorize('admin'), createEvent);
-router.put('/:id', protect, authorize('admin'), updateEvent);
-router.delete('/:id', protect, authorize('admin'), deleteEvent);
+router.post('/', protect, createEvent);
+router.put('/:id', protect, updateEvent);
+router.delete('/:id', protect, deleteEvent);
 router.get('/slug/:slug', getEventBySlug);
 router.get('/image/:id', getEventImage);
 router.put('/:id/custom-fields', protect, updateCustomFields);
